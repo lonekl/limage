@@ -1,5 +1,5 @@
 use png::{BitDepth, ColorType};
-use crate::image::color::{Rgb8, Rgba8};
+use crate::color::{Rgb8, Rgba8};
 
 
 pub fn pass_bit_depth(raw_image_buffer: &mut [u8], bit_depth: BitDepth) -> Vec<u16> {
