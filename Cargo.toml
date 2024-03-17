@@ -1,0 +1,13 @@
+[package]
+name = "limage"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+png = "0.17.11"
+
+[profile.release]
+strip = "symbols"
+codegen-units = 1
+opt-level = "s"
+lto = true
