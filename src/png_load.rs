@@ -1,5 +1,5 @@
 use png::{BitDepth, ColorType};
-use crate::color::{Rgb8, Rgba8};
+use crate::color::{Grey8, Rgb8, Rgba8};
 
 
 pub fn pass_bit_depth(raw_image_buffer: &mut [u8], bit_depth: BitDepth) -> Vec<u16> {
@@ -73,7 +73,7 @@ pub fn pass_bit_depth(raw_image_buffer: &mut [u8], bit_depth: BitDepth) -> Vec<u
 
 
 
-pub fn pass_color_type<Color: From<Rgb8> + From<Rgba8>>(image_value_buffer: Vec<u16>, color_type: ColorType) -> Vec<Color> {
+pub fn pass_color_type<Color: From<Rgb8> + From<Rgba8> + From<Grey8>>(image_value_buffer: Vec<u16>, color_type: ColorType) -> Vec<Color> {
 
     match color_type {
         ColorType::Rgb => {
@@ -110,6 +110,18 @@ pub fn pass_color_type<Color: From<Rgb8> + From<Rgba8>>(image_value_buffer: Vec<
                         (image_value_buffer[value_index + 2] >> 8) as u8,
                         (image_value_buffer[value_index + 3] >> 8) as u8,
                     ).into()
+                );
+            }
+
+            pixels
+        },
+        ColorType::Grayscale => {
+            let mut pixels = vec![];
+            pixels.reserve(image_value_buffer.len());
+
+            for pixel_index in 0..image_value_buffer.len() {
+                pixels.push(
+                    Grey8::new((image_value_buffer[pixel_index] >> 8) as u8).into()
                 );
             }
 

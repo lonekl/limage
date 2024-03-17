@@ -64,9 +64,21 @@ impl Overdraw<Rgba8> for Rgb8 {
     }
 }
 
+impl Overdraw<Grey8> for Rgb8 {
+    fn overdraw_on(&self, rhs: &mut Grey8) {
+        *rhs = (*self).into();
+    }
+}
+
 impl From<Rgba8> for Rgb8 {
     fn from(value: Rgba8) -> Self {
         Rgb8::new(value.r, value.g, value.b)
+    }
+}
+
+impl From<Grey8> for Rgb8 {
+    fn from(value: Grey8) -> Self {
+        Rgb8::new(value.0, value.0, value.0)
     }
 }
 
@@ -148,9 +160,23 @@ impl Overdraw<Rgba8> for Rgba8 {
     }
 }
 
+impl Overdraw<Grey8> for Rgba8 {
+    fn overdraw_on(&self, rhs: &mut Grey8) {
+        let grey: Grey8 = (*self).into();
+
+        rhs.0 = ((grey.0 as i32  -  rhs.0 as i32)  *  grey.0 as i32  /  0xff  +  rhs.0 as i32) as u8;
+    }
+}
+
 impl From<Rgb8> for Rgba8 {
     fn from(value: Rgb8) -> Self {
         Rgba8::new(value.r, value.g, value.b, u8::MAX)
+    }
+}
+
+impl From<Grey8> for Rgba8 {
+    fn from(value: Grey8) -> Self {
+        Rgba8::new(value.0, value.0, value.0, u8::MAX)
     }
 }
 
@@ -205,5 +231,19 @@ impl Overdraw<Rgba8> for Grey8 {
 impl Overdraw<Grey8> for Grey8 {
     fn overdraw_on(&self, rhs: &mut Grey8) {
         rhs.0 = self.0;
+    }
+}
+
+impl From<Rgb8> for Grey8 {
+    fn from(value: Rgb8) -> Self {
+        Self ( ((value.r as u16 + value.g as u16 + value.b as u16) / 3) as u8 )
+    }
+}
+
+impl From<Rgba8> for Grey8 {
+    fn from(value: Rgba8) -> Self {
+        let rgb: Rgb8 = value.into();
+
+        rgb.into()
     }
 }

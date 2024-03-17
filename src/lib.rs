@@ -6,7 +6,7 @@ use std::cmp::Ordering;
 use std::io::{Read, Write};
 use std::ops::{Add, Div, Mul, Sub};
 use png::{Decoder, DecodingError, Encoder, EncodingError, OutputInfo};
-use crate::color::{ColorFn, Overdraw, Rgb8, Rgba8};
+use crate::color::{ColorFn, Grey8, Overdraw, Rgb8, Rgba8};
 
 pub mod color;
 pub mod png_load;
@@ -15,14 +15,14 @@ mod tests;
 
 
 
-pub struct Image<Color: ColorFn + PartialEq + Clone + Copy + From<Rgb8> + From<Rgba8>> {
+pub struct Image<Color: ColorFn + PartialEq + Clone + Copy + From<Rgb8> + From<Rgba8> + From<Grey8>> {
 
     pixels: Vec<Color>,
     dimensions: ImageDimensions,
 
 }
 
-impl<Color: ColorFn + PartialEq + Clone + Copy + From<Rgb8> + From<Rgba8>> Image<Color> {
+impl<Color: ColorFn + PartialEq + Clone + Copy + From<Rgb8> + From<Rgba8> + From<Grey8>> Image<Color> {
 
     pub fn new_raw(image: Vec<Color>, dimensions: ImageDimensions) -> ImageResult<Self> {
         if dimensions.len() != image.len() {
@@ -74,7 +74,7 @@ impl<Color: ColorFn + PartialEq + Clone + Copy + From<Rgb8> + From<Rgba8>> Image
 
 
     pub fn overdraw_image<
-        Filler: ColorFn + PartialEq + Clone + Copy + From<Rgb8> + From<Rgba8> + Overdraw<Color>,
+        Filler: ColorFn + PartialEq + Clone + Copy + From<Rgb8> + From<Rgba8> + From<Grey8> + Overdraw<Color>,
     >(&mut self, filler: &Image<Filler>, draw_offset: ImageDimensions) -> ImageResult<()> {
         let self_filler_limit = filler.dimensions + draw_offset;
 
@@ -97,8 +97,8 @@ impl<Color: ColorFn + PartialEq + Clone + Copy + From<Rgb8> + From<Rgba8>> Image
 
 
     pub fn overdraw_with_shaped_image<
-        Filler:     ColorFn + PartialEq + Clone + Copy + From<Rgb8> + From<Rgba8> + Overdraw<Color>,
-        ShapeColor: ColorFn + PartialEq + Clone + Copy + From<Rgb8> + From<Rgba8>,
+        Filler:     ColorFn + PartialEq + Clone + Copy + From<Rgb8> + From<Rgba8> + From<Grey8> + Overdraw<Color>,
+        ShapeColor: ColorFn + PartialEq + Clone + Copy + From<Rgb8> + From<Rgba8> + From<Grey8>,
     >(&mut self, filler: &Image<Filler>, draw_offset: ImageDimensions, shape: &Image<ShapeColor>, shape_color: ShapeColor) -> ImageResult<()> {
 
         if ! (filler.dimensions == shape.dimensions) {
@@ -120,7 +120,7 @@ impl<Color: ColorFn + PartialEq + Clone + Copy + From<Rgb8> + From<Rgba8>> Image
 
     /// Horribly ineffective operation.
     pub fn overdraw_image_rescaled<
-        Filler: ColorFn + PartialEq + Clone + Copy + From<Rgb8> + From<Rgba8> + Overdraw<Color>,
+        Filler: ColorFn + PartialEq + Clone + Copy + From<Rgb8> + From<Rgba8> + From<Grey8> + Overdraw<Color>,
     >(&mut self, filler: &Image<Filler>, draw_offset: ImageDimensions, max_position: ImageDimensions) -> ImageResult<()> {
         if draw_offset >= max_position {
             return Err(ImageError::DimensionsDontMatch);
