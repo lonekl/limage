@@ -1,9 +1,13 @@
+use png::{BitDepth, ColorType};
+
 pub trait Overdraw<Another> {
     fn overdraw_on(&self, rhs: &mut Another);
 }
 
 pub trait ColorFn {
 
+    const PNG_COLOR_TYPE: ColorType;
+    const PNG_BIT_DEPTH: BitDepth;
     const BYTE_LENGTH: usize;
 
     fn to_raw_bytes(self) -> [u8; Self::BYTE_LENGTH];
@@ -34,6 +38,8 @@ impl Rgb8 {
 }
 
 impl ColorFn for Rgb8 {
+    const PNG_COLOR_TYPE: ColorType = ColorType::Rgb;
+    const PNG_BIT_DEPTH: BitDepth = BitDepth::Eight;
     const BYTE_LENGTH: usize = 3;
 
     fn to_raw_bytes(self) -> [u8; Self::BYTE_LENGTH] {
@@ -106,6 +112,8 @@ impl Rgba8 {
 }
 
 impl ColorFn for Rgba8 {
+    const PNG_COLOR_TYPE: ColorType = ColorType::Rgba;
+    const PNG_BIT_DEPTH: BitDepth = BitDepth::Eight;
     const BYTE_LENGTH: usize = 4;
 
     fn to_raw_bytes(self) -> [u8; Self::BYTE_LENGTH] {
@@ -163,6 +171,8 @@ impl Grey8 {
 }
 
 impl ColorFn for Grey8 {
+    const PNG_COLOR_TYPE: ColorType = ColorType::Grayscale;
+    const PNG_BIT_DEPTH: BitDepth = BitDepth::Eight;
     const BYTE_LENGTH: usize = 1;
 
     fn to_raw_bytes(self) -> [u8; Self::BYTE_LENGTH] {
