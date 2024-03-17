@@ -1,11 +1,17 @@
+#![feature(generic_const_exprs)]
+#![allow(incomplete_features)]
+
+
 use std::cmp::Ordering;
-use std::io::Read;
+use std::io::{Read, Write};
 use std::ops::{Add, Div, Mul, Sub};
-use png::{Decoder, DecodingError, OutputInfo};
+use png::{Decoder, DecodingError, Encoder, EncodingError, OutputInfo};
 use crate::color::{ColorFn, Overdraw, Rgb8, Rgba8};
 
 pub mod color;
-pub mod file_load;
+pub mod png_load;
+#[cfg(test)]
+mod tests;
 
 
 
@@ -45,11 +51,24 @@ impl<Color: ColorFn + PartialEq + Clone + Copy + From<Rgb8> + From<Rgba8>> Image
         let info = png_reader.next_frame(&mut pixel_buffer).to_image_result()?;
 
         let raw_image_buffer = &mut pixel_buffer[..info.buffer_size()];
-        let image_value_buffer = file_load::pass_bit_depth(raw_image_buffer, info.bit_depth);
+        let image_value_buffer = png_load::pass_bit_depth(raw_image_buffer, info.bit_depth);
 
-        let image = file_load::pass_color_type(image_value_buffer, info.color_type);
+        let image = png_load::pass_color_type(image_value_buffer, info.color_type);
 
         Self::new_raw(image, ImageDimensions::from_png_info(info))
+    }
+
+    pub fn save_png<W: Write>(&self, writer: W) -> ImageResult<()>
+        where [(); Color::BYTE_LENGTH]: Sized
+    {
+        let mut encoder = Encoder::new(writer, self.dimensions.x as u32, self.dimensions.y as u32);
+        encoder.set_color(Color::PNG_COLOR_TYPE);
+        encoder.set_depth(Color::PNG_BIT_DEPTH);
+
+        let mut body_writer = encoder.write_header().to_image_result()?;
+        body_writer.write_image_data(&self.raw_u8_bytes()).to_image_result()?;
+
+        Ok(())
     }
 
 
@@ -111,9 +130,11 @@ impl<Color: ColorFn + PartialEq + Clone + Copy + From<Rgb8> + From<Rgba8>> Image
             return Err(ImageError::DimensionsDontMatch);
         }
 
-        for filler_unscaled_position in max_position - draw_offset {
+        let self_draw_scope = max_position - draw_offset;
+
+        for filler_unscaled_position in self_draw_scope {
             let self_position = filler_unscaled_position + draw_offset;
-            let filler_position = filler_unscaled_position * self.dimensions / filler.dimensions;
+            let filler_position = filler_unscaled_position * filler.dimensions / self_draw_scope;
 
             filler.pixels[filler_position.index_on_bigger_image(filler.dimensions.x)]
                 .overdraw_on(&mut self.pixels[self_position.index_on_bigger_image(self.dimensions.x)]);
@@ -364,6 +385,15 @@ impl<T> ToImageResult<T> for Result<T, DecodingError> {
     }
 }
 
+impl<T> ToImageResult<T> for Result<T, EncodingError> {
+    fn to_image_result(self) -> ImageResult<T> {
+        match self {
+            Ok(t) => Ok(t),
+            Err(error) => Err(ImageError::PngSave(error)),
+        }
+    }
+}
+
 
 
 pub type ImageResult<T> = Result<T, ImageError>;
@@ -372,6 +402,7 @@ pub type ImageResult<T> = Result<T, ImageError>;
 pub enum ImageError {
 
     PngLoad(DecodingError),
+    PngSave(EncodingError),
     DimensionsDontMatch,
 
 }
